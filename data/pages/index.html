@@ -1,0 +1,125 @@
+    <main class="container">
+        <form action="" method="post">
+            <br>
+            <h1>Editar informações:</h1>
+            <br><br><br>
+            <div class="row">
+                <br>
+                <div class="col-6">
+                    <br><h2>Wi-Fi</h2><br>
+                    <div>
+                        <label for="wifissid">SSID do Wi-Fi:</label>
+                        <input name="wifissid" id="wifissid" type="text" require>
+                    </div>
+    
+                    <div>
+                        <label for="wifipassword">Senha Wi-Fi:</label>
+                        <input name="wifipassword"id="wifipassword" type="password" require>
+                    </div>
+    
+                    <div>
+                        <label for="apssid">SSID do Ponto de Acesso:</label>
+                        <input name="apssid"id="apssid" type="text" require>
+                    </div>
+    
+                    <div>
+                        <label for="appassword">Senha do Ponto de Acesso:</label>
+                        <input name="appassword"id="appassword" type="password" require>
+                    </div>
+                </div>
+
+                <br>
+                <div class="col-6">
+                    <br><h2>MQTT</h2><br>
+                    <div>
+                        <label for="brokeruri">URI do Broker MQTT:</label>
+                        <input name="brokeruri"id="brokeruri" type="text" require>
+                    </div>
+    
+                    <div>
+                        <label for="brokerip">Endereço IP do Broker MQTT:</label>
+                        <input name="brokerip"id="brokerip" type="text" require>
+                    </div>
+    
+                    <div>
+                        <label for="brokerport">Porta do Broker MQTT:</label>
+                        <input name="brokerport"id="brokerport" type="number" require>
+                    </div>
+    
+                    <div>
+                        <label for="brokeruser">Usuario do Broker MQTT:</label>
+                        <input name="brokeruser"id="brokeruser" type="text" require>
+                    </div>
+    
+                    <div>
+                        <label for="brokerpass">Senha do Broker MQTT:</label>
+                        <input name="brokerpass"id="brokerpass" type="password" require>
+                    </div>
+                </div>
+            </div>
+            <br>
+            <div class="row">
+                <br>
+                <div class="col-6">
+                    <br><h2>Update</h2><br>
+
+                    <div>
+                        <p>Usar URI:</p>
+                        <p>
+                            <label>
+                                <input name="useuri" type="radio" checked />
+                                <span>Sim</span>
+                            </label>
+                        </p>
+                        <p>
+                            <label>
+                                <input name="useuri" type="radio" />
+                                <span>Não</span>
+                            </label>
+                        </p>
+                    </div>
+    
+                    <div>
+                        <input name="updateurl"id="updateurl" type="text" require>
+                        <label for="updateurl">URL da API de atualização:</label>
+                    </div>
+    
+                    <div>
+                        <input name="updatehour"id="updatehour" type="number" require>
+                        <label for="updatehour">Horario de atualização:</label>
+                    </div>
+    
+                    <div class="input-field col s12">
+                        <select name="update_temp" id="update_temp">
+                            <option value="" disabled selected>Escolha uma opção</option>
+                            <option value="1">Diariamente</option>
+                            <option value="2">Semanalmente</option>
+                            <option value="3">Quinzalmente</option>
+                            <option value="4">Mensalmente</option>
+                            <option value="5">Anualmente</option>
+                            <option value="6">Nunca</option>
+                        </select>
+                        <label>Atualizar:</label>
+                    </div>
+                </div>
+
+                <br>
+                <div class="col-6">
+                    <br><h2>Time</h2><br>
+
+                    <div>
+                        <label for="timezone">Timezone:</label>
+                        <input type="number" name="timezone" id="timezone">
+                    </div>
+                </div>
+            </div><br><br><br><br>
+
+            <div>
+                <button type="submit">Salvar</button>
+                <button type="reset">Limpar formulario</button>
+                <a href="/reboot">Reiniciar</a>
+                <a href="/initap">Reiniciar e iniciar estação.</a>
+                <a href="/initsta">Reiniciar e iniciar Ponto de acesso.</a>
+            </div>
+        </form>
+    </main>
