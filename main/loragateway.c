@@ -30,6 +30,8 @@
 
 #include "ssd1306.h"
 
+#include "lora.h"
+
 
 
 #define LORA_BAND 915e6 // 915 MHz
@@ -43,6 +45,14 @@ static const char *TAG = "ESP"; // Tag usada para log
 static xQueueHandle send_lora_queue; // Mensagens para enviar
 static xQueueHandle send_mqtt_queue; // Mensagens para enviar
 
+
+static bool sending = false;
+
+typedef struct {
+    uint8_t data[MAX_LORA_PAYLOAD_SIZE];
+    uint8_t size;
+    uint8_t node_address;
+} message_t;
 
 system_config_t system_config; // Configuração do sistema
 
@@ -60,8 +70,8 @@ const gpio_num_t menu_pin2 = GPIO_NUM_16;
 
 #elif CONFIG_IDF_TARGET_ESP32
 
-const gpio_num_t menu_pin1 = GPIO_NUM_15;
-const gpio_num_t menu_pin2 = GPIO_NUM_16;
+const gpio_num_t menu_pin1 = GPIO_NUM_34;
+const gpio_num_t menu_pin2 = GPIO_NUM_35;
 
 
 #endif
@@ -183,6 +193,9 @@ void app_main(void)
     }
     #endif
 
+    send_mqtt_queue = xQueueCreate(10, sizeof(message_t)); // Cria a fila de envio de mensagens
+    send_lora_queue = xQueueCreate(10, sizeof(message_t)); // Cria a fila de envio de mensagens
+
     if(system_config.system_mode != 1){
         config_time(); // Configuração do relógio
 
@@ -301,16 +314,41 @@ void callback (char* topic, char* payload, unsigned int topic_lenght, unsigned i
     if(strcmp(payload_copy, "reboot") == 0){ // Se o payload for reboot
         ESP_LOGI(TAG, "Reiniciando"); // Log de reinicialização
         esp_restart(); // Reinicia o ESP
-    }
-    if(strcmp(payload_copy, "ping") == 0){ // Se o payload for shutdown
+    } else if(strcmp(payload_copy, "ping") == 0){ // Se o payload for shutdown
         send_message("ping/", "pong"); // Envia a mensagem pong
+    } else {
+        message_t message; // Cria a estrutura de mensagem
+
+        message.size = length; // Define o tamanho da mensagem
+
+        memcpy(message.data, payload, length);
+
+        xQueueSend(send_lora_queue, &message, portMAX_DELAY); // Envia a mensagem para a fila de envio do LoRa
     }
+
 
     free(payload_copy); // Libera a memória alocada para o payload_copy
 }
 
 void on_receive(){
+    u_int8_t message[MAX_LORA_PAYLOAD_SIZE];
+    u_int8_t c = 0;
 
+    while(lora_received()){
+        c = lora_receive_packet(message, MAX_LORA_PAYLOAD_SIZE);
+        message[c] = 0;
+        lora_receive();
+    }
+
+    printf("Recebido: %s\n", message);
+
+    message_t message_temp;
+
+    memcpy(message_temp.data, message, c);
+
+    if(MQTT_CONNECTED){
+        xQueueSend(send_mqtt_queue, &message_temp, portMAX_DELAY);
+    }
 }
 
 static void print_data_in_display_task(void *pvParameters){
@@ -371,6 +409,18 @@ static void mqtt_task(void *pvParameters){
     for(;;){ // Loop Infinito
         ESP_LOGI(TAG, "Enviando dados"); // Log de envio de dados
         esp_task_wdt_reset(); // Reset do WDT
+
+        message_t message;
+
+        if(xQueueReceive(send_mqtt_queue, &message, portMAX_DELAY)){ // Espera receber uma mensagem na fila de envio de mensagens
+            ESP_LOGI(TAG, "Enviando mensagem"); // Log de envio de mensagem
+
+            char temp_data[message.size + 1];
+
+            sprintf(temp_data, "%s", message.data); // Copia o payload para a variável payload_copy
+
+            send_message("", temp_data); // Envia a mensagem
+        }
         
         vTaskDelay(10000 / portTICK_PERIOD_MS); // Delay de 2s
     }
@@ -381,9 +431,17 @@ static void mqtt_task(void *pvParameters){
 
 void send_lora_task(void *pvParameters){
     while(1){
+        esp_task_wdt_reset(); // Reset do WDT
 
+        message_t message;
 
-        vTaskDelay(2000 / portTICK_PERIOD_MS);
+        if(xQueueReceive(send_mqtt_queue, &message, portMAX_DELAY)){ // Recebe a mensagem da fila
+            ESP_LOGI(TAG, "Enviando mensagem"); // Log de envio de mensagem
+            
+            lora_send_packet(message.data, message.size); // Envia o pacote
+        }
+
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
     vTaskDelete(NULL);
