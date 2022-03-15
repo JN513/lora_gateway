@@ -162,7 +162,7 @@ esp_err_t init_web_server(){
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.lru_purge_enable = true;
-    config.max_uri_handlers = 20;
+    config.max_uri_handlers = 24;
     config.uri_match_fn = httpd_uri_match_wildcard;
 
     /*
