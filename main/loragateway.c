@@ -1,6 +1,5 @@
 #include <stdio.h>
 
-#include <stdio.h>
 #include <string.h> // Inclui biblioteca de funções de manipulação de strings
 
 #include "esp_system.h" // Biblioteca de funções do sistema
@@ -26,12 +25,11 @@
 #include "communication.h" // Biblioteca de comunicação
 #include "web_server.h" // Biblioteca de servidor web
 #include "time_manager.h" // Biblioteca de gerenciamento de tempo
-
+#include "security.h"
 
 #include "ssd1306.h"
 
 #include "lora.h"
-
 
 
 #define LORA_BAND 915e6 // 915 MHz
@@ -70,9 +68,8 @@ const gpio_num_t menu_pin2 = GPIO_NUM_16;
 
 #elif CONFIG_IDF_TARGET_ESP32
 
-const gpio_num_t menu_pin1 = GPIO_NUM_34;
-const gpio_num_t menu_pin2 = GPIO_NUM_35;
-
+const gpio_num_t menu_pin1 = GPIO_NUM_12;
+const gpio_num_t menu_pin2 = GPIO_NUM_13;
 
 #endif
 
@@ -227,6 +224,7 @@ void app_main(void)
 
     init_lora(); // Inicialização do LoRa
 
+    xTaskCreatePinnedToCore(send_lora_task, "Send Lora Task", 8192, NULL, 15, NULL, tskNO_AFFINITY);
     xTaskCreatePinnedToCore(receive_lora_task, "Receive Lora Task", 8192, NULL, 5, NULL, tskNO_AFFINITY);
 
     ESP_LOGI(TAG, "Memoria livre apos inicialização do sistema: %d bytes", esp_get_free_heap_size()); // Log da quantidade de memória livre
@@ -340,7 +338,7 @@ void on_receive(){
         lora_receive();
     }
 
-    printf("Recebido: %s\n", message);
+    ESP_LOGI(TAG, "Recebido: %s", message);
 
     message_t message_temp;
 
@@ -435,7 +433,7 @@ void send_lora_task(void *pvParameters){
 
         message_t message;
 
-        if(xQueueReceive(send_mqtt_queue, &message, portMAX_DELAY)){ // Recebe a mensagem da fila
+        if(xQueueReceive(send_lora_queue, &message, portMAX_DELAY)){ // Recebe a mensagem da fila
             ESP_LOGI(TAG, "Enviando mensagem"); // Log de envio de mensagem
             
             lora_send_packet(message.data, message.size); // Envia o pacote
